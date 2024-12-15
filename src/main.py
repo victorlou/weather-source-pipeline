@@ -1,9 +1,21 @@
+#!/usr/bin/env python3
+"""
+Simple script to fetch weather data from Weather Source API and save it locally.
+"""
+
 import os
+import sys
 import json
 from datetime import datetime, timedelta
 import requests
 import pandas as pd
 from dotenv import load_dotenv
+
+# Add the project root directory to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+from src.loader.local import LocalLoader
 
 # Load environment variables
 load_dotenv()
@@ -46,24 +58,13 @@ def fetch_weather_data(latitude, longitude, start_date, end_date):
     
     return data
 
-def save_data(data, output_file):
-    """Save weather data to a local file."""
-    # Convert list of dictionaries to DataFrame
+def process_data(data):
+    """Convert API response to DataFrame."""
     if isinstance(data, list):
         df = pd.DataFrame.from_records(data)
     else:
-        # If it's a single dictionary or has a different structure
         df = pd.DataFrame([data])
-    
-    # Save as CSV for easy viewing
-    df.to_csv(output_file, index=False)
-    print(f"Data saved to {output_file}")
-    
-    # Display sample of the data
-    print("\nSample of fetched data:")
-    print(df.head())
-    print("\nColumns in the data:")
-    print(df.columns.tolist())
+    return df
 
 def main():
     """Main function to demonstrate weather data fetching."""
@@ -79,20 +80,41 @@ def main():
     print(f"Time period: {start_date} to {end_date}")
     
     try:
+        # Initialize local loader
+        loader = LocalLoader()
+        
         # Fetch data
         weather_data = fetch_weather_data(latitude, longitude, start_date, end_date)
         
-        # Save to file
-        output_file = f"weather_data_{start_date}_to_{end_date}.csv"
-        save_data(weather_data, output_file)
+        # Process data into DataFrame
+        df = process_data(weather_data)
+        
+        # Generate output path
+        output_file = f"weather_data_{start_date}_to_{end_date}"
+        
+        # Save data using local loader
+        saved_path = loader.save(
+            df,
+            filename=output_file,
+            file_format='csv'  # or 'parquet'
+        )
+        
+        print(f"Data saved to: {saved_path}")
+        print("\nSample of fetched data:")
+        print(df.head())
+        print("\nColumns in the data:")
+        print(df.columns.tolist())
         
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}")
         print(f"Response content: {e.response.content if hasattr(e, 'response') else 'No response content'}")
+        return
+    except Exception as e:
+        print(f"Error processing or saving data: {e}")
         return
 
 if __name__ == "__main__":
     if not API_KEY:
         print("Error: WEATHER_SOURCE_API_KEY environment variable not set")
     else:
-        main() 
+        main()
