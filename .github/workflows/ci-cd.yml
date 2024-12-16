@@ -8,13 +8,15 @@ on:
 
 env:
   PYTHON_VERSION: '3.13'
-  REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
   REPOSITORY: weather-source-etl
 
 jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    env:
+      LOG_LEVEL: DEBUG
+      DATA_OUTPUT_PATH: ./test_data
     
     steps:
     - name: Checkout code
@@ -43,6 +45,9 @@ jobs:
     
     - name: List installed packages
       run: pip list
+    
+    - name: Create test data directory
+      run: mkdir -p ./test_data
     
     - name: Show test directory structure
       run: |
@@ -80,6 +85,8 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
     
     - name: Build and tag Docker image
+      env:
+        REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       run: |
         # Build with commit SHA tag
         docker build \
@@ -88,6 +95,8 @@ jobs:
           -f deploy/docker/Dockerfile .
     
     - name: Push Docker image
+      env:
+        REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       run: |
         # Push both tags
         docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ github.sha }}
