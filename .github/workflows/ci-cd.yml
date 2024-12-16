@@ -85,21 +85,17 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
     
     - name: Build and tag Docker image
-      env:
-        REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       run: |
         # Build with commit SHA tag
         docker build \
-          -t $REGISTRY/${{ env.REPOSITORY }}:${{ github.sha }} \
-          -t $REGISTRY/${{ env.REPOSITORY }}:latest \
+          -t ${{ steps.login-ecr.outputs.registry }}/${{ env.REPOSITORY }}:${{ github.sha }} \
+          -t ${{ steps.login-ecr.outputs.registry }}/${{ env.REPOSITORY }}:latest \
           -f deploy/docker/Dockerfile .
     
     - name: Push Docker image
-      env:
-        REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       run: |
         # Push both tags
-        docker push $REGISTRY/${{ env.REPOSITORY }}:${{ github.sha }}
-        docker push $REGISTRY/${{ env.REPOSITORY }}:latest
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.REPOSITORY }}:${{ github.sha }}
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.REPOSITORY }}:latest
         
         echo "::notice::Successfully pushed image tags: ${{ github.sha }} and latest"
