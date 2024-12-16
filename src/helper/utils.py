@@ -47,4 +47,24 @@ def create_directory_if_not_exists(directory_path: str) -> None:
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
 
+def validate_date_format(date_str: str) -> bool:
+    """Validate if a string is in YYYY-MM-DD format."""
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+def format_api_response(response: Dict[str, Any]) -> Dict[str, Any]:
+    """Format API response to a standard structure."""
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "status": response.get("status", "unknown"),
+        "data": response.get("data", {}),
+        "metadata": {
+            "source": "weather_source",
+            "version": "2.0.0"
+        }
+    }
+
 logger = logging.getLogger(__name__) 
