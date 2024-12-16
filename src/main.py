@@ -12,9 +12,7 @@ from dotenv import load_dotenv
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from src.loader.local import LocalLoader
-from src.service.weather_api import WeatherSourceAPI
-from src.parser.weather_parser import WeatherDataParser
+from src.handler.weather_handler import WeatherDataHandler
 
 # Load environment variables
 load_dotenv()
@@ -33,34 +31,24 @@ def main():
     print(f"Time period: {start_date} to {end_date}")
     
     try:
-        # Initialize components
-        api_client = WeatherSourceAPI()
-        parser = WeatherDataParser()
-        loader = LocalLoader()
+        # Initialize handler (using local storage)
+        handler = WeatherDataHandler(use_s3=False)
         
-        # Fetch historical data
-        raw_data = api_client.get_historical_weather(
+        # Process historical data
+        saved_path = handler.process_historical_data(
             latitude=latitude,
             longitude=longitude,
             start_date=start_date,
             end_date=end_date,
-            fields="temp,precip,relHum,snowfall"
-        )
-        
-        # Parse data
-        df = parser.parse_historical_data(raw_data)
-        
-        # Generate output path
-        output_file = f"weather_data_{start_date}_to_{end_date}"
-        
-        # Save data using local loader
-        saved_path = loader.save_dataframe(
-            df,
-            filename_prefix=output_file,
-            file_format='csv'  # or 'parquet'
+            fields="temp,precip,relHum,snowfall",
+            file_format="csv"  # or "parquet"
         )
         
         print(f"Data saved to: {saved_path}")
+        
+        # Display sample data
+        import pandas as pd
+        df = pd.read_csv(saved_path)
         print("\nSample of fetched data:")
         print(df.head())
         print("\nColumns in the data:")
