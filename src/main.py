@@ -6,7 +6,6 @@ Simple script to fetch weather data from Weather Source API and save it locally.
 import os
 import sys
 from datetime import datetime, timedelta
-import pandas as pd
 from dotenv import load_dotenv
 
 # Add the project root directory to Python path
@@ -15,17 +14,10 @@ sys.path.insert(0, project_root)
 
 from src.loader.local import LocalLoader
 from src.service.weather_api import WeatherSourceAPI
+from src.parser.weather_parser import WeatherDataParser
 
 # Load environment variables
 load_dotenv()
-
-def process_data(data):
-    """Convert API response to DataFrame."""
-    if isinstance(data, list):
-        df = pd.DataFrame.from_records(data)
-    else:
-        df = pd.DataFrame([data])
-    return df
 
 def main():
     """Main function to demonstrate weather data fetching."""
@@ -41,12 +33,13 @@ def main():
     print(f"Time period: {start_date} to {end_date}")
     
     try:
-        # Initialize API client and local loader
+        # Initialize components
         api_client = WeatherSourceAPI()
+        parser = WeatherDataParser()
         loader = LocalLoader()
         
         # Fetch historical data
-        weather_data = api_client.get_historical_weather(
+        raw_data = api_client.get_historical_weather(
             latitude=latitude,
             longitude=longitude,
             start_date=start_date,
@@ -54,8 +47,8 @@ def main():
             fields="temp,precip,relHum,snowfall"
         )
         
-        # Process data into DataFrame
-        df = process_data(weather_data)
+        # Parse data
+        df = parser.parse_historical_data(raw_data)
         
         # Generate output path
         output_file = f"weather_data_{start_date}_to_{end_date}"
