@@ -6,7 +6,6 @@ Main entry point for the Weather Source ETL pipeline.
 import os
 import sys
 import logging
-from datetime import datetime, timedelta
 
 import click
 from dotenv import load_dotenv
@@ -27,10 +26,10 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.option('--latitude', type=float, required=True, help='Location latitude')
 @click.option('--longitude', type=float, required=True, help='Location longitude')
-@click.option('--data-type', type=click.Choice(['historical', 'forecast', 'both']), 
-              default='both', help='Type of weather data to process')
-@click.option('--start-date', type=str, help='Start date for historical data (YYYY-MM-DD)')
-@click.option('--end-date', type=str, help='End date for historical data (YYYY-MM-DD)')
+@click.option('--data-type', type=click.Choice(['historical', 'forecast']), 
+              required=True, help='Type of weather data to process')
+@click.option('--start-date', type=str, required=True, help='Start date (YYYY-MM-DD)')
+@click.option('--end-date', type=str, required=True, help='End date (YYYY-MM-DD)')
 @click.option('--fields', type=str, help='Comma-separated list of fields to retrieve')
 @click.option('--file-format', type=click.Choice(['parquet', 'csv']), 
               default='parquet', help='Output file format')
@@ -47,18 +46,14 @@ def main(latitude, longitude, data_type, start_date, end_date,
         # Initialize handler
         handler = WeatherDataHandler(use_s3=use_s3)
 
-        if not all([start_date, end_date]):
-            # Default to last 7 days if dates not provided
-            end_date = datetime.now().strftime("%Y-%m-%d")
-            start_date = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
-
+        # Validate date format
         if not all([validate_date_format(start_date), validate_date_format(end_date)]):
             raise ValueError("Invalid date format. Use YYYY-MM-DD")
         
-        # Process historical data
-        if data_type in ["historical", "both"]:
+        # Process data based on type
+        if data_type == "historical":
             logger.info("Processing historical weather data...")
-            historical_path = handler.process_historical_data(
+            result = handler.process_historical_data(
                 latitude=latitude,
                 longitude=longitude,
                 start_date=start_date,
@@ -66,12 +61,10 @@ def main(latitude, longitude, data_type, start_date, end_date,
                 fields=fields,
                 file_format=file_format
             )
-            logger.info(f"Historical data saved to: {historical_path}")
-        
-        # Process forecast data
-        if data_type in ["forecast", "both"]:
+            logger.info(f"Historical data saved to: {result}")
+        else:  # forecast
             logger.info("Processing forecast weather data...")
-            forecast_path = handler.process_forecast_data(
+            result = handler.process_forecast_data(
                 latitude=latitude,
                 longitude=longitude,
                 start_date=start_date,
@@ -79,10 +72,10 @@ def main(latitude, longitude, data_type, start_date, end_date,
                 fields=fields,
                 file_format=file_format
             )
-            logger.info(f"Forecast data saved to: {forecast_path}")
+            logger.info(f"Forecast data saved to: {result}")
         
         logger.info("ETL pipeline completed successfully\n")
-    
+        
     except Exception as e:
         logger.error(f"ETL pipeline failed: {str(e)}")
         raise click.ClickException(str(e))

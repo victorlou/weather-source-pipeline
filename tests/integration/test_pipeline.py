@@ -30,8 +30,14 @@ class TestWeatherETLPipeline(TestCase):
         self.handler = WeatherDataHandler(use_s3=False)  # Use local storage for tests
         self.test_latitude = 40.7128
         self.test_longitude = -74.0060
-        self.end_date = datetime.now().strftime("%Y-%m-%d")
-        self.start_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        
+        # Historical dates (past)
+        self.historical_end_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        self.historical_start_date = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+        
+        # Forecast dates (future)
+        self.forecast_start_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        self.forecast_end_date = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
         
         # Clean any existing test files
         for file in os.listdir(self.temp_dir):
@@ -92,8 +98,8 @@ class TestWeatherETLPipeline(TestCase):
             file_path = self.handler.process_historical_data(
                 latitude=self.test_latitude,
                 longitude=self.test_longitude,
-                start_date=self.start_date,
-                end_date=self.end_date,
+                start_date=self.historical_start_date,
+                end_date=self.historical_end_date,
                 fields="temp,precip,relHum",
                 file_format="parquet"
             )
@@ -114,8 +120,8 @@ class TestWeatherETLPipeline(TestCase):
             args, kwargs = mock_api.get_historical_weather.call_args
             self.assertEqual(kwargs["latitude"], self.test_latitude)
             self.assertEqual(kwargs["longitude"], self.test_longitude)
-            self.assertEqual(kwargs["start_date"], self.start_date)
-            self.assertEqual(kwargs["end_date"], self.end_date)
+            self.assertEqual(kwargs["start_date"], self.historical_start_date)
+            self.assertEqual(kwargs["end_date"], self.historical_end_date)
             self.assertEqual(kwargs["fields"], "temp,precip,relHum")
             
             # Verify parser call
@@ -181,8 +187,8 @@ class TestWeatherETLPipeline(TestCase):
             file_path = self.handler.process_forecast_data(
                 latitude=self.test_latitude,
                 longitude=self.test_longitude,
-                start_date=self.start_date,
-                end_date=self.end_date,
+                start_date=self.forecast_start_date,
+                end_date=self.forecast_end_date,
                 fields="temp,precip,precipProb",
                 file_format="parquet"
             )
@@ -204,8 +210,8 @@ class TestWeatherETLPipeline(TestCase):
             args, kwargs = mock_api.get_forecast.call_args
             self.assertEqual(kwargs["latitude"], self.test_latitude)
             self.assertEqual(kwargs["longitude"], self.test_longitude)
-            self.assertEqual(kwargs["start_date"], self.start_date)
-            self.assertEqual(kwargs["end_date"], self.end_date)
+            self.assertEqual(kwargs["start_date"], self.forecast_start_date)
+            self.assertEqual(kwargs["end_date"], self.forecast_end_date)
             self.assertEqual(kwargs["fields"], "temp,precip,precipProb")
             
             # Verify parser call
@@ -234,8 +240,8 @@ class TestWeatherETLPipeline(TestCase):
             self.handler.process_historical_data(
                 latitude=1000,  # Invalid latitude
                 longitude=self.test_longitude,
-                start_date=self.start_date,
-                end_date=self.end_date
+                start_date=self.historical_start_date,
+                end_date=self.historical_end_date
             )
         self.assertIn("Bad request", str(context.exception))
 
@@ -246,9 +252,9 @@ class TestWeatherETLPipeline(TestCase):
                 latitude=self.test_latitude,
                 longitude=self.test_longitude,
                 start_date="invalid-date",
-                end_date=self.end_date
+                end_date=self.historical_end_date
             )
-        self.assertIn("YYYY-MM-DD format", str(context.exception))
+        self.assertIn("does not match format '%Y-%m-%d'", str(context.exception))
 
     @mock.patch("requests.get")
     @mock.patch("src.service.weather_api.WeatherSourceAPI")
@@ -259,7 +265,7 @@ class TestWeatherETLPipeline(TestCase):
         # Mock requests to raise error
         mock_response = mock.Mock()
         mock_response.status_code = 400
-        mock_response.json.return_value = {"message": "Cannot fetch historical data for future dates"}
+        mock_response.json.return_value = {"message": "Historical data can only be requested for past dates"}
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
             "400 Client Error: Bad Request for url: test_url",
             response=mock_response
@@ -270,10 +276,10 @@ class TestWeatherETLPipeline(TestCase):
             self.handler.process_historical_data(
                 latitude=self.test_latitude,
                 longitude=self.test_longitude,
-                start_date=self.start_date,
+                start_date=self.historical_start_date,
                 end_date=future_date
             )
-        self.assertIn("Bad request", str(context.exception))
+        self.assertIn("Historical data can only be requested for past dates", str(context.exception))
 
     @mock.patch("requests.get")
     def test_pipeline_with_invalid_file_format(self, mock_get):
@@ -303,8 +309,8 @@ class TestWeatherETLPipeline(TestCase):
             self.handler.process_historical_data(
                 latitude=self.test_latitude,
                 longitude=self.test_longitude,
-                start_date=self.start_date,
-                end_date=self.end_date,
+                start_date=self.historical_start_date,
+                end_date=self.historical_end_date,
                 file_format="invalid"
             )
         self.assertIn("Unsupported file format", str(context.exception))
@@ -359,8 +365,8 @@ class TestWeatherETLPipeline(TestCase):
         file_path = handler.process_historical_data(
             latitude=self.test_latitude,
             longitude=self.test_longitude,
-            start_date=self.start_date,
-            end_date=self.end_date,
+            start_date=self.historical_start_date,
+            end_date=self.historical_end_date,
             file_format="parquet"
         )
         

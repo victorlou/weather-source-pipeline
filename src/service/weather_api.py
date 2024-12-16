@@ -109,6 +109,19 @@ class BaseWeatherAPI(ABC):
             logger.debug(f"Response content: {getattr(e.response, 'text', 'No response content')}")
             raise
     
+    def _validate_dates(self, start_date: str, end_date: str) -> None:
+        """Validate dates based on endpoint type."""
+        today = datetime.now(pytz.UTC).date()
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+        
+        if isinstance(self, HistoricalWeatherAPI):
+            if start_dt > today or end_dt > today:
+                raise ValueError("Historical data can only be requested for past dates")
+        elif isinstance(self, ForecastWeatherAPI):
+            if start_dt < today or end_dt < today:
+                raise ValueError("Forecast data can only be requested for future dates")
+    
     @abstractmethod
     def get_data(
         self,
@@ -149,6 +162,7 @@ class HistoricalWeatherAPI(BaseWeatherAPI):
         fields: Optional[str] = None
     ) -> Dict:
         """Get historical weather data."""
+        self._validate_dates(start_date, end_date)
         start_timestamp, end_timestamp = self._get_timestamps(start_date, end_date)
         url = f"{self.base_url}/points/{latitude},{longitude}/hours/{start_timestamp},{end_timestamp}"
         return self._make_request(url, fields)
@@ -181,6 +195,7 @@ class ForecastWeatherAPI(BaseWeatherAPI):
         fields: Optional[str] = None
     ) -> Dict:
         """Get forecast weather data."""
+        self._validate_dates(start_date, end_date)
         start_timestamp, end_timestamp = self._get_timestamps(start_date, end_date)
         url = f"{self.base_url}/points/{latitude},{longitude}/hours/{start_timestamp},{end_timestamp}"
         return self._make_request(url, fields)
@@ -202,6 +217,53 @@ class WeatherSourceAPI:
         fields: Optional[str] = None
     ) -> Dict:
         """Get historical weather data."""
+        # TEMPORARY MOCK DATA - REMOVE LATER
+        # return {
+        #     "location": {
+        #         "latitude": latitude,
+        #         "longitude": longitude,
+        #         "timezone": "America/New_York",
+        #         "countryCode": "US",
+        #         "countryName": "United States of America",
+        #         "subdivCode": "US-VA",
+        #         "subdivName": "Virginia",
+        #         "boundingPoints": [
+        #             {
+        #                 "onpointId": 10725864,
+        #                 "latitude": latitude,
+        #                 "longitude": longitude,
+        #                 "grid": "NORTH_AMERICA_GRID",
+        #                 "distance": 2.6772,
+        #                 "elevation": 173.5
+        #             }
+        #         ],
+        #         "grid": "NORTH_AMERICA_GRID",
+        #         "elevation": 173.5
+        #     },
+        #     "timestampRange": {
+        #         "timestampStart": "2019-12-20T23:00:00-05:00",
+        #         "timestampEnd": "2019-12-20T23:00:00-05:00"
+        #     },
+        #     "fieldList": {
+        #         "fields": {
+        #             "timestamp": "Timestamp as string: RFC 3339",
+        #             "temp": "Fahrenheit",
+        #             "precip": "Inches",
+        #             "relHum": "Percent value in [0,100]",
+        #             "snowfall": "Inches"
+        #         }
+        #     },
+        #     "history": [
+        #         {
+        #             "timestamp": "2019-12-20T23:00:00-05:00",
+        #             "temp": 46.75,
+        #             "precip": 0,
+        #             "relHum": 96.87,
+        #             "snowfall": 0
+        #         }
+        #     ]
+        # }
+    
         return self.historical.get_data(
             latitude=latitude,
             longitude=longitude,
@@ -219,6 +281,57 @@ class WeatherSourceAPI:
         fields: Optional[str] = None
     ) -> Dict:
         """Get forecast weather data."""
+        # TEMPORARY MOCK DATA - REMOVE LATER
+        # return {
+        #     "location": {
+        #         "latitude": latitude,
+        #         "longitude": longitude,
+        #         "timezone": "America/New_York",
+        #         "countryCode": "US",
+        #         "countryName": "United States of America",
+        #         "subdivCode": "US-VA",
+        #         "subdivName": "Virginia",
+        #         "boundingPoints": [
+        #             {
+        #                 "onpointId": 10725864,
+        #                 "latitude": latitude,
+        #                 "longitude": longitude,
+        #                 "grid": "NORTH_AMERICA_GRID",
+        #                 "distance": 2.6772,
+        #                 "elevation": 173.5
+        #             }
+        #         ],
+        #         "grid": "NORTH_AMERICA_GRID",
+        #         "elevation": 173.5
+        #     },
+        #     "timestampRange": {
+        #         "timestampStart": "2019-12-20T23:00:00-05:00",
+        #         "timestampEnd": "2019-12-20T23:00:00-05:00"
+        #     },
+        #     "fieldList": {
+        #         "fields": {
+        #             "timestamp": "Timestamp as string: RFC 3339",
+        #             "timestampInit": "Timestamp as string: RFC 3339",
+        #             "temp": "Fahrenheit",
+        #             "precip": "Inches",
+        #             "precipProb": "Percent value in [0,100]",
+        #             "snowfall": "Inches",
+        #             "snowfallProb": "Percent value in [0,100]"
+        #         }
+        #     },
+        #     "forecast": [
+        #         {
+        #             "timestamp": "2019-12-20T23:00:00-05:00",
+        #             "timestampInit": "2019-12-20T23:00:00-05:00",
+        #             "temp": 46.75,
+        #             "precip": 0,
+        #             "precipProb": 0,
+        #             "snowfall": 0,
+        #             "snowfallProb": 0
+        #         }
+        #     ]
+        # }
+
         return self.forecast.get_data(
             latitude=latitude,
             longitude=longitude,

@@ -1,6 +1,5 @@
 import os
 import logging
-from datetime import datetime
 from typing import Optional
 
 from src.parser.weather_parser import WeatherDataParser
@@ -69,7 +68,7 @@ class WeatherDataHandler:
         except Exception as e:
             logger.error(f"Error processing historical data: {str(e)}")
             raise
-
+    
     def process_forecast_data(
         self,
         latitude: float,
