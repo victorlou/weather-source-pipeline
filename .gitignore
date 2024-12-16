@@ -56,6 +56,10 @@ logs/
 .terraformrc
 terraform.rc
 .terraform.lock.hcl
+*.tfvars
+!deploy/terraform/env/prod.tfvars
+*.tfplan
+crash.log
 
 # OS specific
 .DS_Store

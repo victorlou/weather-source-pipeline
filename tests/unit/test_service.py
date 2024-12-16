@@ -1,5 +1,5 @@
 from unittest import TestCase, mock
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 import pytest
@@ -122,8 +122,9 @@ class TestForecastWeatherAPI(TestCase):
         mock_response.json.return_value = {"data": [{"temperature": 18.3}]}
         mock_get.return_value = mock_response
         
-        start_date = "2023-12-15"
-        end_date = "2023-12-18"
+        # Use future dates for forecast
+        start_date = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        end_date = (datetime.now() + timedelta(days=3)).strftime("%Y-%m-%d")
         start_ts, end_ts = self.api._get_timestamps(start_date, end_date)
         
         result = self.api.get_data(
