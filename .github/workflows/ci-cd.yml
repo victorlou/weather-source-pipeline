@@ -90,8 +90,8 @@ jobs:
       run: |
         # Build with commit SHA tag
         docker build \
-          -t ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ github.sha }} \
-          -t ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest \
+          -t $REGISTRY/${{ env.REPOSITORY }}:${{ github.sha }} \
+          -t $REGISTRY/${{ env.REPOSITORY }}:latest \
           -f deploy/docker/Dockerfile .
     
     - name: Push Docker image
@@ -99,7 +99,7 @@ jobs:
         REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       run: |
         # Push both tags
-        docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ github.sha }}
-        docker push ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:latest
+        docker push $REGISTRY/${{ env.REPOSITORY }}:${{ github.sha }}
+        docker push $REGISTRY/${{ env.REPOSITORY }}:latest
         
         echo "::notice::Successfully pushed image tags: ${{ github.sha }} and latest"
