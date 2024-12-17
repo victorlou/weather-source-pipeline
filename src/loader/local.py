@@ -50,7 +50,12 @@ class LocalLoader:
             # Create full path
             if file_format.lower() == "parquet":
                 filepath = os.path.join(self.output_dir, f"{filename}.parquet")
-                df.to_parquet(filepath, index=False)
+                # Ensure schema preservation for parquet
+                df.to_parquet(
+                    filepath,
+                    index=False,
+                    engine='pyarrow'
+                )
             elif file_format.lower() == "csv":
                 filepath = os.path.join(self.output_dir, f"{filename}.csv")
                 df.to_csv(filepath, index=False)

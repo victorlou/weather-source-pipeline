@@ -43,6 +43,14 @@ class WeatherDataParser:
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
             
+            # Define columns to exclude from string conversion
+            exclude_columns = ["timestamp"]
+            
+            # Convert all columns to strings except excluded ones
+            for column in df.columns:
+                if column not in exclude_columns:
+                    df[column] = df[column].astype(str)
+            
             # Add metadata columns
             df["data_type"] = "historical"
             df["processed_at"] = datetime.now()
@@ -86,12 +94,20 @@ class WeatherDataParser:
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"])
             
+            # Define columns to exclude from string conversion
+            exclude_columns = ["timestamp"]
+            
+            # Convert all columns to strings except excluded ones
+            for column in df.columns:
+                if column not in exclude_columns:
+                    df[column] = df[column].astype(str)
+            
             # Add metadata columns
             df["data_type"] = "forecast"
             df["processed_at"] = datetime.now()
             
             return df
-        
+            
         except Exception as e:
             logger.error(f"Error parsing forecast weather data: {str(e)}")
             logger.debug(f"Raw data structure: {raw_data.keys()}")

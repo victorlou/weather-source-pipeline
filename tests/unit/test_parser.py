@@ -53,9 +53,9 @@ class TestWeatherDataParser(TestCase):
         self.assertIsInstance(df, pd.DataFrame)
         self.assertEqual(len(df), 1)
         self.assertEqual(df["data_type"].iloc[0], "historical")
-        self.assertEqual(df["temp"].iloc[0], 20.5)
-        self.assertEqual(df["latitude"].iloc[0], 40.7128)
-        self.assertEqual(df["longitude"].iloc[0], -74.0060)
+        self.assertEqual(df["temp"].iloc[0], "20.5")
+        self.assertEqual(df["latitude"].iloc[0], "40.7128")
+        self.assertEqual(df["longitude"].iloc[0], "-74.006")
         self.assertEqual(df["timezone"].iloc[0], "America/New_York")
 
     def test_parse_historical_data_empty(self):
@@ -68,11 +68,11 @@ class TestWeatherDataParser(TestCase):
         self.assertIsInstance(df, pd.DataFrame)
         self.assertEqual(len(df), 1)
         self.assertEqual(df["data_type"].iloc[0], "forecast")
-        self.assertEqual(df["temp"].iloc[0], 18.3)
-        self.assertEqual(df["precip"].iloc[0], 0.2)
-        self.assertEqual(df["precipProb"].iloc[0], 30)
-        self.assertEqual(df["latitude"].iloc[0], 40.7128)
-        self.assertEqual(df["longitude"].iloc[0], -74.0060)
+        self.assertEqual(df["temp"].iloc[0], "18.3")
+        self.assertEqual(df["precip"].iloc[0], "0.2")
+        self.assertEqual(df["precipProb"].iloc[0], "30")
+        self.assertEqual(df["latitude"].iloc[0], "40.7128")
+        self.assertEqual(df["longitude"].iloc[0], "-74.006")
 
     def test_parse_forecast_data_empty(self):
         df = self.parser.parse_forecast_data({"forecast": []})

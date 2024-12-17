@@ -8,7 +8,7 @@ import boto3
 import pandas as pd
 from botocore.exceptions import ClientError
 
-from src.helper.utils import getenv_or_raise, get_s3_client
+from src.helper.utils import getenv_or_raise
 
 # Set up module logger
 logger = logging.getLogger(__name__)
@@ -19,7 +19,12 @@ class S3Loader:
     def __init__(self):
         """Initialize S3 loader with AWS credentials."""
         self.bucket_name = getenv_or_raise("S3_BUCKET_NAME")
-        self.s3_client = get_s3_client(getenv_or_raise("AWS_REGION"))
+        self.s3_client = boto3.client(
+            's3',
+            aws_access_key_id=getenv_or_raise("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=getenv_or_raise("AWS_SECRET_ACCESS_KEY"),
+            region_name=getenv_or_raise("AWS_REGION")
+        )
     
     def _build_s3_path(self, folder: str, filename: str) -> str:
         """Build S3 path with proper forward slashes."""
@@ -57,7 +62,11 @@ class S3Loader:
             # Write to buffer in specified format
             if file_format.lower() == "parquet":
                 file_path = f"{filename}.parquet"
-                df.to_parquet(buffer)
+                df.to_parquet(
+                    buffer,
+                    index=False,
+                    engine='pyarrow'
+                )
             elif file_format.lower() == "csv":
                 file_path = f"{filename}.csv"
                 df.to_csv(buffer, index=False)
