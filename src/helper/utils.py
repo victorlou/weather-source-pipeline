@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 from typing import Any, Dict
 
+import boto3
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -66,5 +68,31 @@ def format_api_response(response: Dict[str, Any]) -> Dict[str, Any]:
             "version": "2.0.0"
         }
     }
+
+def get_s3_client(region_name: str) -> boto3.client:
+    """
+    Get S3 client with either environment credentials or IAM role.
+    
+    Args:
+        region_name: AWS region name
+    
+    Returns:
+        Configured S3 client
+    """
+    # Try to get explicit credentials
+    aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    
+    # If credentials are provided, use them
+    if aws_access_key and aws_secret_key:
+        return boto3.client(
+            's3',
+            aws_access_key_id=aws_access_key,
+            aws_secret_access_key=aws_secret_key,
+            region_name=region_name
+        )
+    
+    # Otherwise, let boto3 use its credential chain (IAM role)
+    return boto3.client('s3', region_name=region_name)
 
 logger = logging.getLogger(__name__) 
